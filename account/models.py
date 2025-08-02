@@ -56,7 +56,7 @@ class Profile(models.Model):
     date_of_birth = models.DateTimeField(null=True, blank=True)
     gender = models.CharField(max_length=7, default=GenderChoices.NONE, blank=True, choices=GenderChoices.choices)
     phone_number = models.CharField(max_length=11, default='', blank=True)
-    password_reset_token = models.CharField(max_length=60, default="", blank=True)
+    password_reset_otp = models.CharField(max_length=6, default="", blank=True)
     password_reset_expire = models.DateTimeField(null=True, blank=True)
     role = models.CharField(max_length=10, choices=RoleChoices.choices, default=RoleChoices.PATIENT)
     bio = models.TextField(blank=True)

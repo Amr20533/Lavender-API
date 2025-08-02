@@ -76,3 +76,6 @@ class ProfileSerializer(serializers.ModelSerializer):
             data.pop('extra_specialty_display', None)
         
         return data
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()

@@ -279,62 +279,68 @@ def user_forgot_password(request):
     try:
         user = get_object_or_404(User, email=data['email'])
 
-        token = get_random_string(40)
-        expire_date = timezone.now() + timedelta(minutes=30)
+        otp = get_random_string(6, allowed_chars='0123456789')
+        expire_minutes = 2
+        expire_date = timezone.now() + timedelta(minutes=expire_minutes)
 
-        user.profile.password_reset_token = token
+        user.profile.password_reset_otp = otp
         user.profile.password_reset_expire = expire_date
         user.profile.save()
 
-        host = get_current_host(request)
-        link = f'{host}/api/v1/resetPassword/{token}'
-        body = f"Your Password Reset Link is: {link}"
+        body = f"Your Password Reset OTP is: {otp}. It is valid for {expire_minutes} minutes."
 
-        send_mail(
-            "Password Reset From Homein App",
-            body,
-            "homein@info.com",
-            [data['email']],
-        )
+        try:
+            send_mail(
+                subject="Password Reset From Lavender App",
+                message=body,
+                from_email="info.lavender25@gmail.com",
+                recipient_list=[data['email']],
+                fail_silently=False
+            )
+        except Exception as mail_error:
+            return Response({
+                "status": "failed",
+                "message": "Failed to send OTP email.",
+                "error": str(mail_error),
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({
             "status": "success",
-            "message": f"Password reset token sent to {data['email']}",
-            "link": link
+            "message": f"Password Reset OTP sent to {data['email']}",
         }, status=status.HTTP_200_OK)
 
-    except Exception as error:
+    except Exception as e:
         return Response({
             "status": "failed",
-            "message": f"Error while processing password reset: {error}"
+            "message": "Invalid email or error during OTP generation.",
+            "error": str(e),
         }, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
-def user_reset_password(request, resetToken):
+def user_reset_password(request):
     data = request.data
-    try:
-        user = get_object_or_404(User, profile__password_reset_token=resetToken)
 
-        if user.profile.password_reset_expire < timezone.now():
-            return Response({"error": "Reset token is expired."}, status=status.HTTP_400_BAD_REQUEST)
+    user = get_object_or_404(User, profile__password_reset_otp=data.get('otp'))
 
-        if data['password'] != data['confirmPassword']:
-            return Response({"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
-
-        user.password = make_password(data['password'])
-        user.profile.password_reset_token = ""
-        user.profile.password_reset_expire = None
-        user.profile.save()
-        user.save()
-
+    if user.profile.password_reset_expire < timezone.now():
         return Response({
-            "status": "success",
-            "message": "Password successfully reset"
-        }, status=status.HTTP_200_OK)
-
-    except Exception as error:
-        return Response({
-            "status": "failed",
-            "message": f"Error while resetting password: {error}"
+            "status": "error",
+            "message": "OTP is expired!"
         }, status=status.HTTP_400_BAD_REQUEST)
+
+    if data['password'] != data['confirmPassword']:
+        return Response({
+            "status": "error",
+            "message": "Passwords do not match!"
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    user.password = make_password(data['password'])
+    user.profile.password_reset_otp = ""
+    user.profile.password_reset_expire = None
+    user.profile.save()
+    user.save()
+
+    return Response({
+        "status": "success",
+        "message": "Password has been successfully reset"
+    }, status=status.HTTP_200_OK)

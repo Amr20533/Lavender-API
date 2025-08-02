@@ -77,6 +77,13 @@ class Profile(models.Model):
             if len(self.phone_number) != 11:
                 raise ValidationError("Phone number must be exactly 11 digits.")
     
+    @property
+    def avg_rating(self):
+        reviews = self.reviews.all()
+        if reviews.exists():
+            return round(sum(r.rating for r in reviews) / reviews.count(), 1)
+        return 0.0
+
 @receiver(post_save, sender=User)
 def save_profile(sender, instance, created, **kwargs):
     if created:

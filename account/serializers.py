@@ -43,6 +43,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'country',
             'years_of_experience',
             'price_per_hour',
+            'avg_rating',
             'specialty',
             'specialty_display',
             'extra_specialty',
@@ -74,7 +75,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             data.pop('specialty_display', None)
             data.pop('extra_specialty', None)
             data.pop('extra_specialty_display', None)
-        
+            data.pop('avg_rating', None)
+
         return data
 
 class ForgotPasswordSerializer(serializers.Serializer):

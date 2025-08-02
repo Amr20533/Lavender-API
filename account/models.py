@@ -52,7 +52,7 @@ class SpecialtyChoices(models.TextChoices):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, related_name='profile', on_delete=models.CASCADE)
-    profile_pic = models.ImageField(upload_to='profile_pics/', default='profile_pics/default.jpg')
+    profile_pic = models.ImageField(upload_to='profile_pics/', default='profile_pics/default_profile.jpg')
     date_of_birth = models.DateTimeField(null=True, blank=True)
     gender = models.CharField(max_length=7, default=GenderChoices.NONE, blank=True, choices=GenderChoices.choices)
     phone_number = models.CharField(max_length=11, default='', blank=True)

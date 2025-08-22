@@ -5,6 +5,7 @@ from django.db.models.signals import post_save
 from rest_framework import serializers
 import re
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 class GenderChoices(models.TextChoices):
     MALE = 'Male', 'Male'
@@ -65,6 +66,9 @@ class Profile(models.Model):
     price_per_hour = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     specialty = models.CharField(max_length=50, choices=SpecialtyChoices.choices, blank=True)
     extra_specialty = models.CharField(max_length=100, blank=True)
+    working_days = models.JSONField(default=list, blank=True)
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
 
     def __str__(self):
         return self.user.email
@@ -83,6 +87,24 @@ class Profile(models.Model):
         if reviews.exists():
             return round(sum(r.rating for r in reviews) / reviews.count(), 1)
         return 0.0
+
+    @property
+    def prev_appointments(self):
+        today = timezone.now().date()
+        return self.appointments.filter(models.Q(date__lt=today) | models.Q(is_booked=True))
+
+    @property
+    def available_appointments(self):
+        today = timezone.now().date()
+        return self.appointments.filter(is_booked=False, date__gte=today)
+
+    @property
+    def prev_count(self):
+        return self.prev_appointments.count()
+
+    @property
+    def available_count(self):
+        return self.available_appointments.count()
 
 @receiver(post_save, sender=User)
 def save_profile(sender, instance, created, **kwargs):

@@ -29,7 +29,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'questions',
     'account',
-    'activities'
+    'activities',
+    'quotes',
+    'appointments'
 ]
 
 MIDDLEWARE = [

@@ -8,6 +8,10 @@ urlpatterns = [
     path('api/v1/', include('questions.urls')),
     path('api/v1/', include('account.urls')),
     path('api/v1/', include('activities.urls')),
+    path('api/v1/', include('quotes.urls')),
+    path('api/v1/', include('appointments.urls')),
+
+
 
 
 ]

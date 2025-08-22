@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Profile, SpecialtyChoices
 from django.contrib.auth.models import User
+from appointments.serializers import AppointmentSerializer
 
 
 class CreateAccountSerializer(serializers.ModelSerializer):
@@ -28,6 +29,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     specialty_display = serializers.CharField(source='get_specialty_display', read_only=True)
     extra_specialty_display = serializers.CharField(source='get_extra_specialty_display', read_only=True)
+    appointments = AppointmentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Profile
@@ -48,6 +50,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'specialty_display',
             'extra_specialty',
             'extra_specialty_display',
+            "appointments",
         ]
         read_only_fields = ['role']
 
@@ -76,6 +79,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             data.pop('extra_specialty', None)
             data.pop('extra_specialty_display', None)
             data.pop('avg_rating', None)
+            data.pop('appointments', None)
 
         return data
 

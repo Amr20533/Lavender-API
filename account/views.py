@@ -15,6 +15,8 @@ from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
 from datetime import timedelta
+from django.db.models import Q
+from .utils import StandardResultsSetPagination
 
 @api_view(['POST'])
 def register_user(request):
@@ -33,7 +35,7 @@ def register_user(request):
                     email=email,
                     password=make_password(data.get('password'))
                 )
-                user.profile.role = RoleChoices.PATIENT  # 👈 default role
+                user.profile.role = RoleChoices.PATIENT 
                 user.profile.save()
 
                 return Response({
@@ -176,12 +178,29 @@ def register_specialist(request):
 @api_view(['GET'])
 def get_all_specialists(request):
     try:
+        search_query = request.GET.get('search', '').strip()
         specialists = Profile.objects.select_related('user').filter(role=RoleChoices.SPECIALIST)
-        serializer = ProfileSerializer(specialists, many=True)
-        return Response({
+
+        if search_query:
+            specialists = specialists.filter(
+                Q(user__first_name__icontains=search_query) |
+                Q(user__last_name__icontains=search_query) |
+                Q(user__email__icontains=search_query) |
+                Q(speciality__icontains=search_query) |
+                Q(country__icontains=search_query) |
+                Q(gender__icontains=search_query)
+
+            )
+
+        # Pagination
+        paginator = StandardResultsSetPagination()
+        paginated_specialists = paginator.paginate_queryset(specialists, request)
+
+        serializer = ProfileSerializer(paginated_specialists, many=True)
+        return paginator.get_paginated_response({
             "status": "success",
-            "specialists": serializer.data,
-        }, status=status.HTTP_200_OK)
+            "specialists": serializer.data
+        })
 
     except Exception as error:
         return Response({

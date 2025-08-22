@@ -4,7 +4,7 @@ from account.models import Profile
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    profile = serializers.StringRelatedField(read_only=True)  # show specialist email
+    # profile = serializers.StringRelatedField(read_only=True)  # show specialist email
     price = serializers.DecimalField(source="profile.price_per_hour", 
                                      read_only=True, 
                                      max_digits=6, 
@@ -12,7 +12,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = ["id", "profile", "date", "start_time", "end_time", "price", "is_booked"]
+        fields = ["id", "date", "start_time", "end_time", "price", "is_booked"]
 
 
 class AvailabilitySerializer(serializers.ModelSerializer):

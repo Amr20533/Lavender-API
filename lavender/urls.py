@@ -10,8 +10,7 @@ urlpatterns = [
     path('api/v1/', include('activities.urls')),
     path('api/v1/', include('quotes.urls')),
     path('api/v1/', include('appointments.urls')),
-
-
+    path('api/v1/', include('community.urls')),
 
 
 ]

@@ -46,13 +46,31 @@ class AppointmentAnalyticsSerializer(serializers.Serializer):
         ]
 
 class BookingSerializer(serializers.ModelSerializer):
-    specialist = serializers.CharField(source="appointment.profile.user.email", read_only=True)
+    specialist = serializers.SerializerMethodField()
     appointment_time = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
-        fields = ["id", "patient", "specialist", "appointment", "appointment_time", "is_paid","booked_at"]
+        fields = [
+            "id",
+            "patient",
+            "specialist",
+            "appointment",
+            "appointment_time",
+            "is_paid",
+            "booked_at",
+        ]
         read_only_fields = ["patient", "is_paid", "booked_at"]
+
+    def get_specialist(self, obj):
+        """Return specialist basic info (id + email)."""
+        specialist_profile = obj.appointment.profile
+        return {
+            "id": specialist_profile.id,
+            "email": specialist_profile.user.email,
+            "name": specialist_profile.user.get_full_name(),
+            "speciality": specialist_profile.speciality,
+        }
 
     def get_appointment_time(self, obj):
         return f"{obj.appointment.date} {obj.appointment.start_time}-{obj.appointment.end_time}"

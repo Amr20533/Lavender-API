@@ -31,7 +31,8 @@ INSTALLED_APPS = [
     'account',
     'activities',
     'quotes',
-    'appointments'
+    'appointments',
+    'community'
 ]
 
 MIDDLEWARE = [

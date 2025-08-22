@@ -46,7 +46,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'years_of_experience',
             'price_per_hour',
             'avg_rating',
-            'specialty',
+            'speciality',
             'specialty_display',
             'extra_specialty',
             'extra_specialty_display',
@@ -74,7 +74,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         if instance.role != 'specialist':
             data.pop('experience', None)
             data.pop('price_per_hour', None)
-            data.pop('specialty', None)
+            data.pop('speciality', None)
             data.pop('specialty_display', None)
             data.pop('extra_specialty', None)
             data.pop('extra_specialty_display', None)

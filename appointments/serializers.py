@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Appointment
+from .models import Appointment, Booking
 from account.models import Profile
 
 
@@ -14,17 +14,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = ["id", "profile", "date", "start_time", "end_time", "price", "is_booked"]
 
-
-class AppointmentCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Appointment
-        fields = ["date", "start_time", "end_time"]
-
-    def create(self, validated_data):
-        user = self.context["request"].user
-        profile = user.profile
-
-        return Appointment.objects.create(profile=profile, **validated_data)
 
 class AvailabilitySerializer(serializers.ModelSerializer):
     class Meta:
@@ -55,3 +44,31 @@ class AppointmentAnalyticsSerializer(serializers.Serializer):
             f"{appt.date} {appt.start_time}-{appt.end_time}"
             for appt in obj["available_appointments"]
         ]
+
+class BookingSerializer(serializers.ModelSerializer):
+    specialist = serializers.CharField(source="appointment.profile.user.email", read_only=True)
+    appointment_time = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Booking
+        fields = ["id", "patient", "specialist", "appointment", "appointment_time", "is_paid","booked_at"]
+        read_only_fields = ["patient", "is_paid", "booked_at"]
+
+    def get_appointment_time(self, obj):
+        return f"{obj.appointment.date} {obj.appointment.start_time}-{obj.appointment.end_time}"
+
+    def create(self, validated_data):
+        request = self.context["request"]
+        validated_data["patient"] = request.user.profile
+
+        appointment = validated_data["appointment"]
+
+        if appointment.is_booked:
+            raise serializers.ValidationError("This appointment is already booked.")
+
+        # mark appointment as booked
+        appointment.is_booked = True
+        appointment.save()
+
+        booking = super().create(validated_data)
+        return booking

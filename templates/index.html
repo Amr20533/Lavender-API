@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Success</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <!-- DotLottie player script -->
+    <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Lottie animation container -->
+        <div class="lottie-container">
+            <!-- DotLottie animation player -->
+            <dotlottie-player 
+                src="https://lottie.host/bd96de29-edeb-496e-ab4d-9cf46a43f858/1y077rrgWM.json" 
+                background="transparent" 
+                speed="1" 
+                style="width: 100%; height: 100%;" 
+                loop="false"   
+                autoplay>
+            </dotlottie-player>
+        </div>
+
+        <h1 class="success-text">Payment Successful</h1>
+        <p class="description">Your Propery have been checkout successfully!</p>
+    </div>
+</body>
+</html>

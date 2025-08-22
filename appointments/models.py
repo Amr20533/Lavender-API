@@ -28,3 +28,29 @@ class Appointment(models.Model):
     def available_for_profile(cls, profile):
         today = timezone.now().date()
         return cls.objects.filter(profile=profile, is_booked=False, date__gte=today)
+
+class Booking(models.Model):
+    patient = models.ForeignKey(
+        "account.Profile",
+        related_name="bookings",
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'patient'}  # ensure only patients can book
+    )
+    appointment = models.OneToOneField(
+        Appointment,
+        related_name="booking",
+        on_delete=models.CASCADE
+    )
+    booked_at = models.DateTimeField(auto_now_add=True)
+    is_paid = models.BooleanField(default=False)
+    payment_reference = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        ordering = ["-booked_at"]
+
+    def __str__(self):
+        return f"Booking by {self.patient.user.email} for {self.appointment}"
+
+    @property
+    def specialist(self):
+        return self.appointment.profile

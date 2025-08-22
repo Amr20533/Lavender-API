@@ -64,7 +64,7 @@ class Profile(models.Model):
     country = models.CharField(max_length=100, blank=True)
     years_of_experience = models.PositiveIntegerField(null=True, blank=True, help_text="Years of experience")
     price_per_hour = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
-    specialty = models.CharField(max_length=50, choices=SpecialtyChoices.choices, blank=True)
+    speciality = models.CharField(max_length=50, choices=SpecialtyChoices.choices, blank=True)
     extra_specialty = models.CharField(max_length=100, blank=True)
     working_days = models.JSONField(default=list, blank=True)
     start_time = models.TimeField(null=True, blank=True)

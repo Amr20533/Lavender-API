@@ -1,0 +1,59 @@
+/* Basic reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Set background and center everything */
+body {
+    font-family: 'Mulish', sans-serif;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;  
+    margin: 0;   
+}
+
+/* Container for everything */
+.container {
+    text-align: center;
+    padding: 40px 20px;  /* Add more padding for spacing */
+    background-color: white;
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+    justify-content: center; /* Align items vertically */
+    align-items: center; /* Center horizontally */
+    border-radius: 15px;
+    max-width: 500px;  /* Limit container width */
+    width: 100%;       /* Allow container to scale on smaller screens */
+}
+
+/* Lottie animation container style */
+.lottie-container {
+    display: flex;
+    justify-content: center;  /* Center Lottie animation horizontally */
+    align-items: center;      /* Center Lottie animation vertically */
+    width: 120px;  /* Set desired size for the animation */
+    height: 120px;  /* Set desired size for the animation */
+    margin-bottom: 20px;
+}
+
+/* Success heading */
+.success-text {
+    font-size: 36px; /* Reduced the font size for better fit */
+    font-weight: bold;
+    color: #050505;
+    margin-bottom: 10px;
+}
+
+/* Description text */
+.description {
+    font-size: 18px;
+    color: #6A7A8F;
+    max-width: 400px;
+    margin: 0 auto;
+    margin-top: 24px;
+    line-height: 1.5; 
+}

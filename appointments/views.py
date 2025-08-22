@@ -69,6 +69,7 @@ class BookingListView(generics.ListAPIView):
 
 class SuccessfulPaymentView(TemplateView):
     template_name = 'index.html'
+    
 class CheckoutSessionView(APIView):
     permission_classes = [IsAuthenticated]
 

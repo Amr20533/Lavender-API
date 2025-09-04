@@ -20,9 +20,26 @@ class IntroQuestionSerializer(serializers.ModelSerializer):
         fields = ['id', 'question', 'type', 'description', 'options']
         
 class IntroAnswerSerializer(serializers.ModelSerializer):
+    question = IntroQuestionSerializer(read_only=True)  # show question details
+    question_id = serializers.PrimaryKeyRelatedField(
+        queryset=IntroQuestion.objects.all(), source='question', write_only=True
+    )
+    selected_options = serializers.PrimaryKeyRelatedField(
+        queryset=IntroOption.objects.all(), many=True, required=False
+    )
+
     class Meta:
         model = IntroAnswer
-        fields = ['id', 'user', 'question', 'text_answer', 'selected_options', 'created_at']
+        fields = [
+            'id',
+            'user',
+            'question',    
+            'question_id',  
+            'text_answer',
+            'selected_options',
+            'created_at',
+        ]
+        read_only_fields = ['user']
 
 
 # class IntroQuestionSerializer(serializers.ModelSerializer):

@@ -21,9 +21,15 @@ class IntroQuestionViewSet(viewsets.ReadOnlyModelViewSet):
 #         serializer.save(user=self.request.user)
 
 class SubmitAnswerViewSet(mixins.CreateModelMixin,
+                          mixins.ListModelMixin,
                           viewsets.GenericViewSet):
     queryset = IntroAnswer.objects.all()
     serializer_class = IntroAnswerSerializer
 
+    def get_queryset(self):
+        # Only return answers from the logged-in user
+        return IntroAnswer.objects.filter(user=self.request.user)
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+

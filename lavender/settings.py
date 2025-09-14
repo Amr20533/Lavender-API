@@ -32,7 +32,8 @@ INSTALLED_APPS = [
     'activities',
     'quotes',
     'appointments',
-    'community'
+    'community',
+    'programs'
 ]
 
 MIDDLEWARE = [

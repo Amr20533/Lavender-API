@@ -9,3 +9,7 @@ admin.site.register(UserAnswer)
 admin.site.register(QuizResultCategory)
 admin.site.register(QuizResult)
 
+
+admin.site.register(Course)
+admin.site.register(CourseVideo)
+admin.site.register(Enrollment)

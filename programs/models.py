@@ -2,6 +2,7 @@ import uuid
 import datetime
 from django.db import models
 from django.contrib.auth.models import User
+from account.models import Profile
 
 class MusicCard(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -124,3 +125,58 @@ class QuizResult(models.Model):
 
     def __str__(self):
         return f"{self.user} → {self.quiz.title}: {self.title}"
+
+
+class Course(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    instructor = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name='courses',
+        limit_choices_to={'role': 'SPECIALIST'},
+        help_text="Only specialists can create courses."
+    )
+    title = models.CharField(max_length=255)
+    category = models.CharField(max_length=255)
+    description = models.TextField()
+    image = models.ImageField(upload_to='courses/images/', blank=True, null=True)
+    price = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+    duration = models.PositiveIntegerField(default=0, help_text="Duration in minutes.")
+    total_sessions = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def update_sessions_count(self):
+        self.total_sessions = self.videos.count()
+        self.save()
+
+    def __str__(self):
+        return self.title
+
+
+class CourseVideo(models.Model):
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='videos'
+    )
+    title = models.CharField(max_length=255)
+    video_url = models.URLField()
+    order = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.course.title} - {self.title}"
+
+
+class Enrollment(models.Model):
+    """Tracks which user has access to which course."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='enrollments')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
+    is_paid = models.BooleanField(default=False)
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'course')
+
+    def __str__(self):
+        return f"{self.user.user.email} -> {self.course.title} ({'Paid' if self.is_paid else 'Locked'})"

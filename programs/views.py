@@ -1,13 +1,20 @@
 from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import MusicCard, PsychoMeasurementQuiz, UserAnswer, QuizResult, QuizResultCategory
+from .models import *
 from .serializers import *
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Count
-from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from rest_framework.decorators import action
+import stripe
+from django.conf import settings  
+from django.views.generic import TemplateView
+from rest_framework.views import APIView
+from decimal import Decimal, InvalidOperation
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class MusicCardListCreateView(generics.ListCreateAPIView):
     queryset = MusicCard.objects.all()
@@ -164,3 +171,129 @@ class QuizResultView(generics.RetrieveAPIView):
             quiz__id=quiz_id,
             user=self.request.user
         )
+
+
+
+class CourseViewSet(viewsets.ModelViewSet):
+    queryset = Course.objects.all().order_by('-created_at')
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        profile = user.profile
+
+        if profile.role != 'SPECIALIST':
+            raise serializers.ValidationError("Only specialists can create courses.")
+
+        serializer.save(instructor=profile)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def access(self, request, pk=None):
+        """Check if user has paid access to this course"""
+        course = self.get_object()
+        has_access = Enrollment.objects.filter(
+            user=request.user.profile, course=course, is_paid=True
+        ).exists()
+        if has_access:
+            return Response({"status" : "success",
+                            "data": CourseSerializer(course).data})
+        return Response({"detail": "Course locked. Please complete payment."}, status=403)
+
+
+class EnrollmentViewSet(viewsets.ModelViewSet):
+    queryset = Enrollment.objects.all()
+    serializer_class = EnrollmentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Enrollment.objects.filter(user=self.request.user.profile)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user.profile)
+
+
+
+class SuccessfulCoursePaymentView(TemplateView):
+    template_name = 'index.html'
+    
+class CheckoutCourseSessionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, course_id):
+        try:
+            # ✅ 1. Get the course to pay for
+            course = Course.objects.get(id=course_id)
+
+            MAX_STRIPE_AMOUNT = Decimal("999999.99")
+            quantity = int(request.data.get("quantity", 1))
+            if quantity <= 0:
+                return Response({"error": "Quantity must be positive."}, status=400)
+
+            # ✅ 2. Convert and validate price
+            try:
+                price_str = str(course.price).strip()
+                course_price = Decimal(price_str.replace(",", ""))
+                total_price = course_price * quantity
+                if total_price > MAX_STRIPE_AMOUNT:
+                    total_price = MAX_STRIPE_AMOUNT
+                    quantity = 1
+            except (InvalidOperation, ValueError, TypeError):
+                return Response({"error": "Invalid price format."}, status=400)
+
+            # ✅ 3. Stripe Line Items
+            line_items = [{
+                "price_data": {
+                    "currency": "usd",
+                    "unit_amount": int(total_price * 100),  # Stripe expects cents
+                    "product_data": {
+                        "name": f"Course: {course.title}",
+                        "description": f"Instructor: {course.instructor.user.get_full_name()}",
+                    },
+                },
+                "quantity": quantity,
+            }]
+
+            # ✅ 4. Metadata to identify user & course
+            session_metadata = {
+                "course_id": str(course.id),
+                "user_id": str(request.user.id)
+            }
+
+            # ✅ 5. Create Stripe Checkout Session
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=["card"],
+                line_items=line_items,
+                mode="payment",
+                metadata=session_metadata,
+                success_url=settings.SITE_URL + "api/v1/payment/success/",
+                cancel_url=settings.SITE_URL + "api/v1/payment/cancel/"
+            )
+
+            # ✅ 6. Create Enrollment record (pending)
+            enrollment, created = Enrollment.objects.get_or_create(
+                user=request.user.profile,
+                course=course,
+                defaults={'is_paid': False}
+            )
+
+            # Save payment reference
+            enrollment.payment_reference = checkout_session.id
+            enrollment.save()
+
+            return Response({
+                "status": "success",
+                "url": checkout_session.url
+            }, status=200)
+
+        except Course.DoesNotExist:
+            return Response({"error": "Course not found."}, status=404)
+        except stripe.error.StripeError as e:
+            return Response({"error": f"Stripe error: {str(e)}"}, status=400)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

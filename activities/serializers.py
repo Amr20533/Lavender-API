@@ -4,19 +4,20 @@ from account.models import Profile
 
 class FavoriteSerializer(serializers.ModelSerializer):
     specialist_id = serializers.PrimaryKeyRelatedField(
-    queryset=Profile.objects.filter(role='SPECIALIST'),
-    source='specialist'
-)
-
-
-    def validate_specialist(self, value):
-        if getattr(value, 'role', None) != 'SPECIALIST':
-            raise serializers.ValidationError("This user is not a specialist.")
-        return value
+        queryset=Profile.objects.all(),
+        source='specialist'
+    )
 
     class Meta:
         model = Favorite
-        fields = ['id', 'specialist_id', 'user', 'in_favorite', 'created_at']
+        fields = ['id', 'specialist_id', 'in_favorite', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        validated_data['user'] = user
+        return super().create(validated_data)
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     specialist = serializers.PrimaryKeyRelatedField(queryset=Profile.objects.all())

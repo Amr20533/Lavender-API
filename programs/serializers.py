@@ -7,6 +7,9 @@ from .models import (
     UserAnswer,
     QuizResultCategory,
     QuizResult,
+    Course,
+    CourseVideo,
+    Enrollment
 )
 
 class MusicCardSerializer(serializers.ModelSerializer):
@@ -81,3 +84,42 @@ class QuizResultSerializer(serializers.ModelSerializer):
             "description",
             "created_at",
         ]
+
+
+class CourseVideoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseVideo
+        fields = ['id', 'title', 'video_url', 'order']
+
+
+class CourseSerializer(serializers.ModelSerializer):
+    videos = CourseVideoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Course
+        fields = ['id', 'title', 'description', 'image', 'price', 'category', 'duration', 'total_sessions', 'videos', 'created_at']
+        read_only_fields = ['id', 'created_at', 'total_sessions']
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        profile = user.profile
+
+        if profile.role != 'SPECIALIST':
+            from rest_framework import serializers
+            raise serializers.ValidationError("Only specialists can create courses.")
+
+        serializer.save(instructor=profile)
+
+
+
+class EnrollmentSerializer(serializers.ModelSerializer):
+    course = CourseSerializer(read_only=True)
+    course_id = serializers.PrimaryKeyRelatedField(
+        queryset=Course.objects.all(),
+        source='course',
+        write_only=True
+    )
+
+    class Meta:
+        model = Enrollment
+        fields = ['id', 'course', 'course_id', 'is_paid', 'enrolled_at']

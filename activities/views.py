@@ -5,12 +5,11 @@ from rest_framework import status
 from .models import Favorite, Review
 from account.models import Profile, RoleChoices
 from .serializers import FavoriteSerializer, ReviewSerializer
-from account.permissions import *
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, IsUser])
+@permission_classes([IsAuthenticated])
 def add_to_favorites(request):
-    serializer = FavoriteSerializer(data=request.data)
+    serializer = FavoriteSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
         specialist = serializer.validated_data['specialist']
         favorite, created = Favorite.objects.get_or_create(

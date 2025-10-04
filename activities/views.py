@@ -5,9 +5,10 @@ from rest_framework import status
 from .models import Favorite, Review
 from account.models import Profile, RoleChoices
 from .serializers import FavoriteSerializer, ReviewSerializer
+from account.permissions import *
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsUser])
 def add_to_favorites(request):
     serializer = FavoriteSerializer(data=request.data)
     if serializer.is_valid():

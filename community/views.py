@@ -8,6 +8,7 @@ from rest_framework import status
 from .models import *
 from .serializers import *
 from django.db.models import Case, When, Value, IntegerField
+from account.permissions import *
 
 
 @api_view(['POST'])
@@ -54,21 +55,28 @@ def edit_post(request, post_id):
     )
 
 
+# @api_view(['GET'])
+# def get_posts(request):
+#     user = request.user
+
+#     # exclude posts already seen by this user
+#     seen_post_ids = UserSeenPosts.objects.filter(user=user).values_list('post_id', flat=True)
+#     new_posts = Posts.objects.exclude(id__in=seen_post_ids).order_by("-created_at")
+
+#     # mark these posts as seen
+#     for post in new_posts:
+#         UserSeenPosts.objects.get_or_create(user=user, post=post)
+
+#     serializer = PostSerializer(new_posts, many=True)
+#     return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+
 @api_view(['GET'])
 def get_posts(request):
     user = request.user
 
-    # exclude posts already seen by this user
-    seen_post_ids = UserSeenPosts.objects.filter(user=user).values_list('post_id', flat=True)
-    new_posts = Posts.objects.exclude(id__in=seen_post_ids).order_by("-created_at")
-
-    # mark these posts as seen
-    for post in new_posts:
-        UserSeenPosts.objects.get_or_create(user=user, post=post)
-
-    serializer = PostSerializer(new_posts, many=True)
+    posts = Posts.objects.all()
+    serializer = PostSerializer(posts, many=True)
     return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
-
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -222,7 +230,7 @@ def get_comment_replies(request, comment_id):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsUserOrSpecialist])
 @parser_classes([JSONParser, MultiPartParser, FormParser])
 def create_status(request):
     caption = request.data.get("caption")
@@ -234,7 +242,10 @@ def create_status(request):
         image=image
     )
 
-    return Response({"status": "success", "data": StatusSerializer(status_obj).data}, status=status.HTTP_201_CREATED)
+    return Response(
+        {"status": "success", "data": StatusSerializer(status_obj).data},
+        status=status.HTTP_201_CREATED,
+    )
 
 
 @api_view(['POST'])

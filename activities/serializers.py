@@ -4,12 +4,13 @@ from account.models import Profile
 
 class FavoriteSerializer(serializers.ModelSerializer):
     specialist_id = serializers.PrimaryKeyRelatedField(
-        queryset=Profile.objects.all(), 
-        source='specialist'
-    )
+    queryset=Profile.objects.filter(role='SPECIALIST'),
+    source='specialist'
+)
+
 
     def validate_specialist(self, value):
-        if value.role != 'SPECIALIST':
+        if getattr(value, 'role', None) != 'SPECIALIST':
             raise serializers.ValidationError("This user is not a specialist.")
         return value
 

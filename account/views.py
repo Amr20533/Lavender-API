@@ -211,26 +211,6 @@ def get_all_specialists(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_all_users(request):
-    try:
-        users = User.objects.filter(profile__role=RoleChoices.PATIENT).exclude(is_staff=True, is_superuser=True).select_related('profile')
-
-        profiles = [user.profile for user in users]
-        serializer = ProfileSerializer(profiles, many=True)
-
-        return Response({
-            "status": "success",
-            "users": serializer.data,
-        }, status=status.HTTP_200_OK)
-
-    except Exception as error:
-        return Response({
-            "status": "failed",
-            "message": f"Error fetching users: {error}",
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def current_user(request):
     # user_serializer = UserSerializer(request.user, many=False)
     profile_serializer = ProfileSerializer(request.user.profile, many=False)

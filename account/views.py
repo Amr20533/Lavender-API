@@ -219,7 +219,7 @@ def get_all_users(request):
         serializer = ProfileSerializer(profiles, many=True)
 
         return Response({
-            "status": "success",
+            "status": "success",    
             "users": serializer.data,
         }, status=status.HTTP_200_OK)
 

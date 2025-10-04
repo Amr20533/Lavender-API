@@ -71,11 +71,12 @@ def edit_post(request, post_id):
 #     return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_posts(request):
     user = request.user
 
     posts = Posts.objects.all()
-    serializer = PostSerializer(posts, many=True)
+    serializer = PostSerializer(posts, many=True, context={'request': request})
     return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])

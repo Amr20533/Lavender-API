@@ -59,6 +59,7 @@ class PostSerializer(serializers.ModelSerializer):
 class PostSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField(read_only=True)
     likes_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
     comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
@@ -69,17 +70,23 @@ class PostSerializer(serializers.ModelSerializer):
             "caption",
             "created_at",
             "likes_count",
+            "is_liked",   
             "image",
             "video",
             "comments",
         ]
 
     def get_user(self, obj):
-        return obj.user.id 
+        return obj.user.id
 
     def get_likes_count(self, obj):
         return obj.likes.count()
 
+    def get_is_liked(self, obj):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(id=request.user.id).exists()
+        return False
 
 class StatusReplySerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)

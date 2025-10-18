@@ -13,6 +13,7 @@ from django.conf import settings
 from django.views.generic import TemplateView
 from rest_framework.views import APIView
 from decimal import Decimal, InvalidOperation
+from account.models import RoleChoices
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -177,33 +178,47 @@ class QuizResultView(generics.RetrieveAPIView):
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all().order_by('-created_at')
     serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAuthenticated()]
-        return [AllowAny()]
+        # Allow everyone to view courses and details
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        # Require auth for actions like create/update/destroy and access
+        return [IsAuthenticated()]
 
     def perform_create(self, serializer):
         user = self.request.user
         profile = user.profile
 
-        if profile.role != 'SPECIALIST':
+        if profile.role != RoleChoices.SPECIALIST:
             raise serializers.ValidationError("Only specialists can create courses.")
 
         serializer.save(instructor=profile)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
     def access(self, request, pk=None):
-        """Check if user has paid access to this course"""
+        """
+        Return full access to course content (videos, materials)
+        only if user has paid enrollment.
+        """
         course = self.get_object()
+        profile = request.user.profile
+
         has_access = Enrollment.objects.filter(
-            user=request.user.profile, course=course, is_paid=True
+            user=profile,
+            course=course,
+            is_paid=True
         ).exists()
+
         if has_access:
-            return Response({"status" : "success",
-                            "data": CourseSerializer(course).data})
-        return Response({"detail": "Course locked. Please complete payment."}, status=403)
+            # Use a more detailed serializer for full content
+            data = CourseDetailSerializer(course, context={'request': request}).data
+            return Response({"status": "success", "data": data})
+
+        return Response(
+            {"detail": "Course locked. Please complete payment to view videos."},
+            status=403
+        )
 
 
 class EnrollmentViewSet(viewsets.ModelViewSet):

@@ -2,7 +2,7 @@ import uuid
 import datetime
 from django.db import models
 from django.contrib.auth.models import User
-from account.models import Profile
+from account.models import Profile, RoleChoices
 
 class MusicCard(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -133,17 +133,24 @@ class Course(models.Model):
         Profile,
         on_delete=models.CASCADE,
         related_name='courses',
-        limit_choices_to={'role': 'SPECIALIST'},
+        limit_choices_to={'role': RoleChoices.SPECIALIST},
         help_text="Only specialists can create courses."
     )
     title = models.CharField(max_length=255)
-    category = models.CharField(max_length=255)
+    category = models.CharField(max_length=255, default= "" , blank= True)
     description = models.TextField()
     image = models.ImageField(upload_to='courses/images/', blank=True, null=True)
     price = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
     duration = models.PositiveIntegerField(default=0, help_text="Duration in minutes.")
     total_sessions = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def avg_rating(self):
+        reviews = self.reviews.all()
+        if reviews.exists():
+            return round(sum(r.rating for r in reviews) / reviews.count(), 1)
+        return 0.0
 
     def update_sessions_count(self):
         self.total_sessions = self.videos.count()

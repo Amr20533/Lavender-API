@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Favorite, Review
+from .models import Favorite, Review, CourseReview
 from account.models import Profile
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -32,3 +32,12 @@ class ReviewSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Rating must be between 1 and 5.")
         return value
 
+
+class CourseReviewSerializer(serializers.ModelSerializer):
+    # user_name = serializers.CharField(source='user.user.first_name', read_only=True)
+    # user_pic = serializers.ImageField(source='user.profile_pic', read_only=True)
+    user = serializers.PrimaryKeyRelatedField(queryset=Profile.objects.all())
+
+    class Meta:
+        model = CourseReview
+        fields = ['id', 'course', 'user', 'rating', 'comment', 'created_at']

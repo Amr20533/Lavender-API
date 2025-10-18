@@ -11,6 +11,9 @@ from .models import (
     CourseVideo,
     Enrollment
 )
+from account.serializers import ProfileSerializer
+from activities.serializers import CourseReviewSerializer
+from account.models import RoleChoices
 
 class MusicCardSerializer(serializers.ModelSerializer):
     duration = serializers.DurationField(read_only=True)
@@ -94,22 +97,36 @@ class CourseVideoSerializer(serializers.ModelSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     videos = CourseVideoSerializer(many=True, read_only=True)
+    instructor = ProfileSerializer(read_only=True)
+    # reviews = CourseReviewSerializer(many=True, read_only=True)
+    avg_rating = serializers.FloatField(read_only=True)  # ⬅️ added
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'description', 'image', 'price', 'category', 'duration', 'total_sessions', 'videos', 'created_at']
+        fields = [
+            'id',
+            'title',
+            'description',
+            'image',
+            'price',
+            'category',
+            'duration',
+            'instructor',
+            'total_sessions',
+            'avg_rating',
+            # 'reviews',
+            'videos',
+            'created_at'
+        ]
         read_only_fields = ['id', 'created_at', 'total_sessions']
 
     def perform_create(self, serializer):
-        user = self.request.user
+        user = self.context['request'].user
         profile = user.profile
 
-        if profile.role != 'SPECIALIST':
-            from rest_framework import serializers
+        if profile.role != RoleChoices.SPECIALIST:
             raise serializers.ValidationError("Only specialists can create courses.")
-
         serializer.save(instructor=profile)
-
 
 
 class EnrollmentSerializer(serializers.ModelSerializer):

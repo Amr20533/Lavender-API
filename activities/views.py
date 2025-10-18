@@ -1,10 +1,11 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Favorite, Review
+from .models import Favorite, Review, CourseReview
 from account.models import Profile, RoleChoices
-from .serializers import FavoriteSerializer, ReviewSerializer
+from .serializers import FavoriteSerializer, ReviewSerializer, CourseReviewSerializer
+from programs.models import Course
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -139,3 +140,58 @@ def delete_review(request, specialist_id):
             "status": "error",
             "message": "Review not found."
         }, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_course_review(request):
+    serializer = CourseReviewSerializer(data=request.data)
+    if serializer.is_valid():
+        profile = request.user.profile
+        course = serializer.validated_data['course']
+
+        # Prevent instructor from reviewing own course
+        if course.instructor == profile:
+            return Response({
+                "status": "error",
+                "message": "You cannot review your own course."
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        review, created = CourseReview.objects.update_or_create(
+            user=profile,
+            course=course,
+            defaults={
+                'rating': serializer.validated_data['rating'],
+                'comment': serializer.validated_data.get('comment', '')
+            }
+        )
+        return Response({
+            "status": "success",
+            "message": "Review added." if created else "Review updated."
+        }, status=status.HTTP_201_CREATED)
+
+    return Response({"status": "error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_course_reviews(request, course_id):
+    try:
+        course = Course.objects.get(pk=course_id)
+    except Course.DoesNotExist:
+        return Response({"status": "error", "message": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    reviews = course.reviews.select_related('user').order_by('-created_at')
+    serializer = CourseReviewSerializer(reviews, many=True)
+    return Response({"status": "success", "reviews": serializer.data}, status=status.HTTP_200_OK)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_course_review(request, course_id):
+    try:
+        review = CourseReview.objects.get(user=request.user.profile, course_id=course_id)
+        review.delete()
+        return Response({"status": "success", "message": "Review deleted."}, status=status.HTTP_200_OK)
+    except CourseReview.DoesNotExist:
+        return Response({"status": "error", "message": "Review not found."}, status=status.HTTP_404_NOT_FOUND)

@@ -1,10 +1,14 @@
 from django.urls import path
-from .views import AppointmentListView, BookingCreateView, SpecialistAnalyticsView, AvailabilityUpdateView,CheckoutSessionView, SuccessfulPaymentView, BookingListView
+from .views import (AppointmentListView, BookingCreateView, 
+                    SpecialistAnalyticsView, AvailabilityUpdateView,
+                    CheckoutSessionView, SuccessfulPaymentView,
+                      BookingListView, AppointmentCreateView)
 
 urlpatterns = [
     path("appointments/", AppointmentListView.as_view(), name="appointment-list"),
     path("appointments/analytics/", SpecialistAnalyticsView.as_view(), name="appointment-analytics"),
     path("appointments/availability/", AvailabilityUpdateView.as_view(), name="update-availability"),
+    path("appointments/create/", AppointmentCreateView.as_view(), name="appointment-create"),
 
     path("bookings/create/", BookingCreateView.as_view(), name="booking-create"),
     path("bookings/", BookingListView.as_view(), name="booking-list"),

@@ -5,10 +5,15 @@ from appointments.models import Appointment
 
 def generate_slots_for_profile(profile, weeks_ahead=1):
     """
-    Generate slots for the given profile for the next `weeks_ahead` weeks.
+    Regenerate all slots for the given profile for the next `weeks_ahead` weeks.
+    Deletes old future slots first.
     """
     today = timezone.now().date()
 
+    #  1. Delete future slots
+    Appointment.objects.filter(profile=profile, date__gte=today, is_booked=False).delete()
+
+    #  2. Regenerate fresh ones
     for week in range(weeks_ahead):
         for day_name in profile.working_days:
             weekday_index = list(calendar.day_name).index(day_name)

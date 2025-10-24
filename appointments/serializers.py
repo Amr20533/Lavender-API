@@ -30,8 +30,8 @@ class AvailabilitySerializer(serializers.ModelSerializer):
 class AppointmentAnalyticsSerializer(serializers.Serializer):
     prev_count = serializers.IntegerField()
     available_count = serializers.IntegerField()
-    prev_appointments = serializers.SerializerMethodField()
-    available_appointments = serializers.SerializerMethodField()
+    prev_appointments = AppointmentSerializer(many=True)
+    available_appointments = AppointmentSerializer(many=True)
 
     def get_prev_appointments(self, obj):
         return [

@@ -41,14 +41,21 @@ class SpecialistAnalyticsView(APIView):
         prev_appointments = Appointment.previous_for_profile(profile)
         available_appointments = Appointment.available_for_profile(profile)
 
-        data = {
+        serializer = AppointmentAnalyticsSerializer({
             "prev_count": prev_appointments.count(),
             "available_count": available_appointments.count(),
-            "prev_appointments": prev_appointments[:10],      # limit for readability
+            "prev_appointments": prev_appointments[:10],
             "available_appointments": available_appointments[:10],
-        }
-        serializer = AppointmentAnalyticsSerializer(data)
+        })
         return Response(serializer.data)
+
+class AppointmentCreateView(generics.CreateAPIView):
+    queryset = Appointment.objects.all()
+    serializer_class = AppointmentSerializer
+    permission_classes = [IsAuthenticated, IsSpecialist]
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.request.user.profile)
 
 
 class BookingCreateView(generics.CreateAPIView):

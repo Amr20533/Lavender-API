@@ -127,13 +127,20 @@ def like_comment(request, comment_id):
     except Comment.DoesNotExist:
         return Response({"error": "Comment not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    # Create or toggle like
     like, created = LikeComments.objects.get_or_create(user=request.user, comment=comment)
-
     if not created:
         like.delete()
-        return Response({"status": "success", "likes_count": comment.comment_likes.count()}, status=status.HTTP_200_OK)
 
-    return Response({"status": "success", "likes_count": comment.comment_likes.count()}, status=status.HTTP_200_OK)
+    # Check if current user now likes the comment
+    is_liked = LikeComments.objects.filter(user=request.user, comment=comment).exists()
+
+    return Response({
+        "status": "success",
+        "likes_count": comment.comment_likes.count(),
+        "is_liked": is_liked
+    }, status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -144,7 +151,7 @@ def get_post_comments(request, post_id):
         return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
 
     comments = post.comments.all().order_by("-created_at")
-    serializer = CommentSerializer(comments, many=True)
+    serializer = CommentSerializer(comments, many=True, context={"request": request})
     return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
 
 

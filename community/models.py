@@ -40,6 +40,13 @@ class Comment(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     edited = models.BooleanField(default=False)
+    
+    @property
+    def likes_count(self):
+        return self.comment_likes.count()
+
+    def is_liked_by(self, user):
+        return self.comment_likes.filter(user=user).exists()
 
     def __str__(self):
         return f"Comment by {self.user.username} on {self.post}"
@@ -47,16 +54,12 @@ class Comment(models.Model):
 class LikeComments(models.Model):
     user = models.ForeignKey(User, related_name='user_comment_likes', on_delete=models.CASCADE)
     comment = models.ForeignKey(Comment, related_name='comment_likes', on_delete=models.CASCADE)
-    liked = models.BooleanField(default=True)
 
     class Meta:
         unique_together = ['user', 'comment']
 
-    def __str__(self):
-        return f"{self.user.username} likes {self.comment}"
-
     def clean(self):
-        if self.user == self.post.user:
+        if self.user == self.comment.user:
             raise ValidationError("You cannot like your own comment.")
 
 

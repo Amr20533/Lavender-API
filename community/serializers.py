@@ -18,22 +18,25 @@ class ReplySerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField(read_only=True)
+    user = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
-    replies = ReplySerializer(many=True, read_only=True)
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ["id", "post", "user", "content", "created_at", "edited", "likes_count", "replies"]
+        fields = ["id", "post", "user", "content", "created_at", "edited", "likes_count", "is_liked"]
 
     def get_user(self, obj):
-        return obj.user.id 
+        return obj.user.id
 
     def get_likes_count(self, obj):
         return obj.comment_likes.count()
 
-    def get_replies_count(self, obj):
-        return obj.replies.count()
+    def get_is_liked(self, obj):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return obj.comment_likes.filter(user=request.user).exists()
+        return False
 
 class PostSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField(read_only=True)

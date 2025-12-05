@@ -236,7 +236,6 @@ def get_comment_replies(request, comment_id):
     serializer = ReplySerializer(replies, many=True)
     return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
 
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsUserOrSpecialist])
 @parser_classes([JSONParser, MultiPartParser, FormParser])
@@ -250,8 +249,10 @@ def create_status(request):
         image=image
     )
 
+    serializer = StatusSerializer(status_obj, context={"request": request})
+
     return Response(
-        {"status": "success", "data": StatusSerializer(status_obj).data},
+        {"status": "success", "data": serializer.data},
         status=status.HTTP_201_CREATED,
     )
 
@@ -297,20 +298,25 @@ def reply_status(request, status_id):
 @permission_classes([IsAuthenticated])
 def get_status_feed(request):
     now = timezone.now()
+    
+    # Get all statuses in last 24 hours
     statuses = Status.objects.filter(created_at__gte=now - timedelta(hours=24))
-
-    # prioritize current user first
-    statuses = statuses.annotate(
+    
+    # Mark as seen
+    for s in statuses:
+        SeenStatus.objects.get_or_create(user=request.user, status=s)
+    
+    # Group by user
+    users_with_statuses = User.objects.filter(statuses__in=statuses).distinct()
+    
+    # Optional: prioritize current user first
+    users_with_statuses = users_with_statuses.annotate(
         is_current_user=Case(
-            When(user=request.user, then=Value(0)),
+            When(id=request.user.id, then=Value(0)),
             default=Value(1),
             output_field=IntegerField()
         )
-    ).order_by("is_current_user", "-created_at")
-
-    # mark as seen
-    for s in statuses:
-        SeenStatus.objects.get_or_create(user=request.user, status=s)
-
-    serializer = StatusSerializer(statuses, many=True, context={"request": request})
+    ).order_by("is_current_user")
+    
+    serializer = UserStatusSerializer(users_with_statuses, many=True, context={"request": request})
     return Response({"status": "success", "data": serializer.data})

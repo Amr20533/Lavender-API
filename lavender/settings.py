@@ -142,6 +142,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STRIPE_PUBLIC_KEY = ''
-STRIPE_SECRET_KEY = ''
+STRIPE_PUBLIC_KEY = 'pk_test_51OhwKlBAlUTaGJA1tLN6jvyIj912xlklWbwgCanyQ89f7G2QqhEqNqsPBtEK1jPt4fBPk4tliUB5z5CSr4GbIr8Z00FQIDIniV'
+STRIPE_SECRET_KEY = 'sk_test_51OhwKlBAlUTaGJA1ItQyRVyJlPKUnDlld7w8FJRJrXpm3Mes2Azy4flaCdyufl0Cw4zacVjFidlqENIRFfvNitVC00mVFJ9e5c'
 SITE_URL = 'http://127.0.0.1:8000/'

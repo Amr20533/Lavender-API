@@ -34,7 +34,7 @@ urlpatterns = [
         'get': 'retrieve',
         'delete': 'destroy'
     }), name="enrollment-detail"),
-    path('courses/<uuid:course_id>/', CheckoutCourseSessionView.as_view(), name='checkout_course'),
+    path('courses/checkout/<uuid:course_id>/', CheckoutCourseSessionView.as_view(), name='checkout_course'),
     path('success/', SuccessfulCoursePaymentView.as_view(), name='payment_success'),
 
 ]

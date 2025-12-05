@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.hashers import make_password
 from rest_framework.permissions import BasePermission
@@ -19,6 +19,7 @@ from django.db.models import Q
 from .utils import StandardResultsSetPagination
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register_user(request):
     data = request.data
     serializer = CreateAccountSerializer(data=data)
@@ -61,6 +62,7 @@ def register_user(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login_user(request):
     serializer = LoginSerializer(data=request.data)
 
@@ -98,6 +100,7 @@ def login_user(request):
     }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login_specialist(request):
     serializer = LoginSerializer(data=request.data)
 
@@ -135,6 +138,7 @@ def login_specialist(request):
     }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register_specialist(request):
     data = request.data
     serializer = CreateAccountSerializer(data=data)
@@ -176,6 +180,7 @@ def register_specialist(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_all_specialists(request):
     try:
         search_query = request.GET.get('search', '').strip()
@@ -293,6 +298,7 @@ def get_current_host(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def user_forgot_password(request):
     data = request.data
     try:
@@ -336,6 +342,7 @@ def user_forgot_password(request):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def user_reset_password(request):
     data = request.data
 

@@ -300,8 +300,13 @@ def get_status_feed(request):
     now = timezone.now()
     
     # Get all statuses in last 24 hours
-    statuses = Status.objects.filter(created_at__gte=now - timedelta(hours=24))
+    # statuses = Status.objects.filter(created_at__gte=now - timedelta(hours=24))
     
+    statuses = Status.objects.filter(
+    user= request.user,
+    created_at__gte=timezone.now() - timedelta(hours=24)
+)
+
     # Mark as seen
     for s in statuses:
         SeenStatus.objects.get_or_create(user=request.user, status=s)

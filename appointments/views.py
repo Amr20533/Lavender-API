@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions
 from .models import Appointment, Booking
 from .serializers import AppointmentSerializer, AvailabilitySerializer, BookingSerializer,AppointmentAnalyticsSerializer
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -50,6 +50,7 @@ class SpecialistAnalyticsView(APIView):
         return Response(serializer.data)
 
 class AppointmentCreateView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsAuthenticated, IsSpecialist]
@@ -75,6 +76,7 @@ class BookingListView(generics.ListAPIView):
 
 
 class SuccessfulPaymentView(TemplateView):
+    permission_classes = [AllowAny]
     template_name = 'index.html'
     
 class CheckoutSessionView(APIView):

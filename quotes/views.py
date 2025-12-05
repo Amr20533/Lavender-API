@@ -6,7 +6,7 @@ from .serializers import QuoteSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 
 @api_view(['POST'])
@@ -29,6 +29,7 @@ def create_quote(request):
     }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def daily_quote(request):
     quotes = Quote.objects.order_by('id') 
     count = quotes.count()

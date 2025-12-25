@@ -9,10 +9,12 @@ from .models import (
     QuizResult,
     Course,
     CourseVideo,
-    Enrollment
+    Enrollment,
+    ProgramSession,
+    SessionItem,
+    FreeProgram
 )
 from account.serializers import ProfileSerializer
-from activities.serializers import CourseReviewSerializer
 from account.models import RoleChoices
 
 class MusicCardSerializer(serializers.ModelSerializer):
@@ -140,3 +142,69 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Enrollment
         fields = ['id', 'course', 'course_id', 'is_paid', 'enrolled_at']
+
+class SessionItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SessionItem
+        fields = [ 'name', 'description']
+
+class ProgramSessionSerializer(serializers.ModelSerializer):
+    items = SessionItemSerializer(many=True, read_only=True)
+    formatted_date = serializers.ReadOnlyField(source='get_formatted_date')
+    video_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProgramSession
+        fields = ['id', 'title', 'status', 'video', 'video_url', 'duration', 'formatted_date', 'items']
+
+    def get_video_url(self, obj):
+        if obj.video:
+            return obj.video.url
+        return None
+
+# 4. Main Free Program Serializer
+class FreeProgramSerializer(serializers.ModelSerializer):
+    author = ProfileSerializer(source='user.profile', read_only=True)
+    category = serializers.ReadOnlyField(source='category.title')
+    sessions = ProgramSessionSerializer(many=True, read_only=True)
+
+    next_session_date = serializers.SerializerMethodField()
+    next_session_title = serializers.SerializerMethodField()
+    # is_live = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FreeProgram
+        fields = [
+            'id',
+            'author',
+            'category',
+            'title',
+            'image',
+            'viewers_number',
+            'sessions',
+            'next_session_date',
+            'next_session_title',
+            # 'is_live',
+        ]
+
+    # 🔥 LIVE first, then UPCOMING
+    def _get_priority_session(self, obj):
+        live = obj.sessions.filter(status='جارية الان').first()
+        if live:
+            return live
+
+        upcoming = obj.sessions.filter(status='قادمة') \
+            .order_by('appointment_date') \
+            .first()
+        return upcoming
+
+    def get_next_session_title(self, obj):
+        session = self._get_priority_session(obj)
+        return session.title if session else "لا توجد جلسات قادمة"
+
+    def get_next_session_date(self, obj):
+        session = self._get_priority_session(obj)
+        return session.get_formatted_date() if session else None
+
+    def get_is_live(self, obj):
+        return obj.sessions.filter(status='جارية الان').exists()

@@ -235,6 +235,7 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
 
 
 class SuccessfulCoursePaymentView(TemplateView):
+    permission_classes = [AllowAny]
     template_name = 'index.html'
     
 class CheckoutCourseSessionView(APIView):
@@ -312,3 +313,10 @@ class CheckoutCourseSessionView(APIView):
             return Response({"error": f"Stripe error: {str(e)}"}, status=400)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+
+
+class FreeProgramListView(generics.ListAPIView):
+    permission_classes = (AllowAny, )
+    queryset = FreeProgram.objects.all().order_by('-created_at')
+    serializer_class = FreeProgramSerializer

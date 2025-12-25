@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     QuizListView, QuizDetailView,
     SubmitAnswerView, SubmitQuizResultView, QuizResultView, MusicCardListCreateView, MusicCardDetailView,
-    CheckoutCourseSessionView, SuccessfulCoursePaymentView, CourseViewSet, EnrollmentViewSet
+    CheckoutCourseSessionView, SuccessfulCoursePaymentView, CourseViewSet, EnrollmentViewSet, FreeProgramListView
 )
 
 urlpatterns = [
@@ -36,6 +36,6 @@ urlpatterns = [
     }), name="enrollment-detail"),
     path('courses/checkout/<uuid:course_id>/', CheckoutCourseSessionView.as_view(), name='checkout_course'),
     path('success/', SuccessfulCoursePaymentView.as_view(), name='payment_success'),
-
+    path('free-programs/', FreeProgramListView.as_view(), name='program-list'),
 ]
 

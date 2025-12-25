@@ -13,3 +13,9 @@ admin.site.register(QuizResult)
 admin.site.register(Course)
 admin.site.register(CourseVideo)
 admin.site.register(Enrollment)
+
+
+admin.site.register(FreeProgram)
+admin.site.register(ProgramSession)
+admin.site.register(ProgramCategory)
+admin.site.register(SessionItem)

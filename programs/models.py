@@ -9,7 +9,7 @@ class MusicCard(models.Model):
     title = models.CharField(max_length=200, default="None", blank=False)
     author = models.CharField(max_length=180, default="N/A", blank=False)
     album = models.CharField(max_length=200, default="Single", blank=True)
-    album_cover = models.ImageField(upload_to="music_covers/",default="music_covers\music_cover.png", blank=True, null=True)
+    album_cover = models.ImageField(upload_to="music_covers/",default="music_covers/music_cover.png", blank=True, null=True)
     audio_file = models.FileField(upload_to="music_files/", blank=True, null=True)
     # duration stored as DurationField and will be filled automatically
     duration = models.DurationField(blank=True, null=True)
@@ -89,7 +89,7 @@ class QuizAnswer(models.Model):
 
 
 class UserAnswer(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     question = models.ForeignKey(QuizQuestion, on_delete=models.CASCADE)
     answer = models.ForeignKey(QuizAnswer, on_delete=models.CASCADE)
 
@@ -113,7 +113,7 @@ class QuizResultCategory(models.Model):
 
 class QuizResult(models.Model):
     quiz = models.ForeignKey(PsychoMeasurementQuiz, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     total_score = models.IntegerField()
     percentage = models.FloatField()
     title = models.CharField(max_length=255) 
@@ -177,7 +177,8 @@ class CourseVideo(models.Model):
 class Enrollment(models.Model):
     """Tracks which user has access to which course."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='enrollments')
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='enrollments', null=True, blank=True)
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
     is_paid = models.BooleanField(default=False)
     enrolled_at = models.DateTimeField(auto_now_add=True)
@@ -187,3 +188,86 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f"{self.user.user.email} -> {self.course.title} ({'Paid' if self.is_paid else 'Locked'})"
+
+
+
+class ProgramCategory(models.Model):
+    category = models.CharField(max_length=100, unique=True) # e.g., "دعم نفسي"
+    # slug = models.SlugField(max_length=100, unique=True, allow_unicode=True)
+    # icon = models.ImageField(upload_to='categories/icons/', blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = "Categories"
+
+    def __str__(self):
+        return self.category
+    
+class SessionStatus(models.TextChoices):
+    COMPLETED = 'تم', 'تم'
+    ONGOING = 'جارية الان', 'جارية الان'
+    UPCOMING = 'قادمة', 'قادمة'
+
+class FreeProgram(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='program_creator',
+        help_text="The specialist who created this program",
+         null=True, blank=False
+    )
+    
+    category = models.ForeignKey(
+        'ProgramCategory', # String reference prevents circular errors
+        on_delete=models.SET_NULL, 
+        related_name='programs', 
+        null=True, 
+        blank=True
+    )
+    title = models.CharField(max_length=255)
+    image = models.ImageField(upload_to='programs/images/', blank=True, null=True)
+    viewers_number = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} by {self.user.username}"
+
+    @property
+    def next_session(self):
+        return self.sessions.filter(status='قادمة').order_by('appointment_date').first()
+
+class ProgramSession(models.Model):
+    class Status(models.TextChoices):
+        COMPLETED = 'تم', 'تم'
+        ONGOING = 'جارية الان', 'جارية الان'
+        UPCOMING = 'قادمة', 'قادمة'
+
+    program = models.ForeignKey(
+        'FreeProgram',
+        on_delete=models.CASCADE,
+        related_name='sessions'
+    )
+    title = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.UPCOMING)
+    video = models.FileField(upload_to='sessions/videos/', blank=True, null=True)
+    duration = models.PositiveIntegerField(default=0, help_text="Duration in minutes")
+    appointment_date = models.DateTimeField()
+
+    def get_formatted_date(self):
+        if not self.appointment_date:
+            return "غير محدد"
+        date_part = self.appointment_date.strftime("%d-%m-%Yم / الساعة %I:%M")
+        am_pm = "ص" if self.appointment_date.strftime("%p") == "AM" else "م"
+        return f"{date_part}{am_pm}"
+
+    def __str__(self):
+        return f"{self.program.title} - {self.title}"    
+    
+
+class SessionItem(models.Model):
+    session = models.ForeignKey(ProgramSession, on_delete=models.CASCADE, related_name='items')
+    name = models.CharField(max_length=255) # e.g., "تمرين 5–4–3–2–1"
+    description = models.TextField(blank=True, null=True) # e.g., "كيف أحافظ على وعيي وقت الانهيار"
+
+    def __str__(self):
+        return self.name

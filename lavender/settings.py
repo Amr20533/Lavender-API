@@ -33,7 +33,8 @@ INSTALLED_APPS = [
     'quotes',
     'appointments',
     'community',
-    'programs'
+    'programs',
+    'chat'
 ]
 
 MIDDLEWARE = [
